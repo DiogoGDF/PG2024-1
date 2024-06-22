@@ -1,18 +1,11 @@
-/* Hello Triangle - código adaptado de https://learnopengl.com/#!Getting-started/Hello-Triangle 
- *
- * Adaptado por Rossana Baptista Queiroz
- * para a disciplina de Processamento Gráfico - Unisinos
- * Versão inicial: 7/4/2017
- * Última atualização em 14/08/2023
- *
- */
-
 #include <iostream>
 #include <string>
 #include <assert.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <cstdlib>
+#include <ctime>
 
 using namespace std;
 
@@ -27,11 +20,19 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 // Protótipos das funções
 int setup();
 void pickColor(GLdouble xpos, GLdouble ypos);
-//initRandomColors();
+void initRandomColors();
+void removeColor(int r, int g, int b);
 
-// Dimensões da janela (pode ser alterado em tempo de execução)
-const GLuint WIDTH = 1024, HEIGHT = 768;
+// Variáveis globais
+int tentativas = 0;
+int retangulosRemovidos = 0;
+
+// Dimensões da janela
+const GLuint WIDTH = 800, HEIGHT = 600;
+
+// Retangulos e matriz de cores
 const int COLUMNS = 5, LINES = 11;
+glm::vec3 colorMatrix[COLUMNS][LINES];
 
 // Função MAIN
 int main()
@@ -39,18 +40,13 @@ int main()
 	// Inicialização da GLFW
 	glfwInit();
 
-	//Muita atenção aqui: alguns ambientes não aceitam essas configurações
-	//Você deve adaptar para a versão do OpenGL suportada por sua placa
-	//Sugestão: comente essas linhas de código para desobrir a versão e
-	//depois atualize (por exemplo: 4.5 com 4 e 5)
-	/*glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);*/
+	// Inicializa o gerador de números aleatórios (para sortear as cores)
+	std::srand(std::time(0));
 
-	//Essencial para computadores da Apple
-//#ifdef __APPLE__
-//	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-//#endif
+	// Versão do OpenGL
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Criação da janela GLFW
 	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Jogo das cores", nullptr, nullptr);
@@ -63,9 +59,7 @@ int main()
 
 	// GLAD: carrega todos os ponteiros d funções da OpenGL
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
 		std::cout << "Failed to initialize GLAD" << std::endl;
-	}
 
 	// Obtendo as informações de versão
 	const GLubyte* renderer = glGetString(GL_RENDERER);
@@ -85,10 +79,12 @@ int main()
 
 	// Gerando um buffer simples
 	GLuint VAO = setup();
-	
+
 	glm::mat4 model = glm::mat4(1);
 
-	// Loop da aplicação - "game loop"
+	initRandomColors(); // Inicializa a matriz de cores
+
+	// Loop principal
 	while (!glfwWindowShouldClose(window))
 	{
 
@@ -100,36 +96,41 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glBindVertexArray(VAO); //Conectando ao buffer de geometria
-		
-		glm::vec3 color(0.0f, 0.0f, 1.0f); // sugestão
 
 		shader.Use();
-		GLfloat xc = -0.77f,
-			    xl = 0.90f;
-		for (int c = 0; c < COLUMNS; c++) 
+
+		GLfloat xInitialPos = -0.77f,
+			yInitialPos = 0.90f;
+
+		// Desenha os retângulos
+		for (int c = 0; c < COLUMNS; c++)
 			for (int l = 0; l < LINES; l++) {
+				// Define a cor do retângulo
+				shader.setVec3("cor", colorMatrix[c][l].r, colorMatrix[c][l].g, colorMatrix[c][l].b);
 
-			shader.setVec3("cor", color.r, color.g, color.b); // sugestão colorMatrix[COLUMNS][LINES] 
+				model = glm::mat4(1);
 
-			model = glm::mat4(1);
+				// Posiciona o retângulo
+				model = glm::translate(model, glm::vec3(xInitialPos + c * 0.385, yInitialPos - l * 0.125, 0));
+				model = glm::scale(model, glm::vec3(0.38, 0.38, 1));
 
-			model = glm::translate(model, glm::vec3(xc + c * 0.385, xl - l * 0.125, 0)); // sugestão
-			model = glm::scale(model, glm::vec3(0.38, 0.38, 1)); // sugestão
+				shader.setMat4("model", glm::value_ptr(model));
 
-			shader.setMat4("model", glm::value_ptr(model));
+				// Desenha o retângulo
+				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+			}
 
-			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		}
-		
 		shaderPalete.Use();
 
 		model = glm::mat4(1);
 
-		model = glm::translate(model, glm::vec3(0.70, -0.70, 0)); 
-		model = glm::scale(model, glm::vec3(0.5, 0.5, 1)); 
+		// Posiciona a paleta de cores
+		model = glm::translate(model, glm::vec3(0.70, -0.70, 0));
+		model = glm::scale(model, glm::vec3(0.5, 0.5, 1));
 
 		shaderPalete.setMat4("model", glm::value_ptr(model));
 
+		// Desenha a paleta de cores
 		glDrawArrays(GL_TRIANGLE_FAN, 4, 4);
 
 		glBindVertexArray(0); //Desconectando o buffer de geometria
@@ -147,6 +148,7 @@ int main()
 // Função de callback de teclado
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
+	// Fecha a aplicação se a tecla ESC for pressionada
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 }
@@ -156,18 +158,20 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
 	GLdouble xpos, ypos;
 	int w, h;
-	
+
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+		// Obtém a posição do mouse
 		glfwGetCursorPos(window, &xpos, &ypos);
-		cout << "X: " << xpos << " Y: " << ypos << endl; // posicão do pixel
 		glfwGetWindowSize(window, &w, &h);
-		pickColor(xpos, h - ypos); // cor do pixel
+
+		// Pega a cor do pixel clicado
+		pickColor(xpos, h - ypos);
 	}
 }
 
-// Esta função está bastante harcoded 
 int setup()
 {
+	// Definindo um gradiente de cores para a paleta
 	GLfloat vertices[] = {
 		-0.5f, -0.15f, 0.0f, 0.0f, 0.0f, 1.0f,  // Vértice retângulo
 		-0.5f, 0.15f, 0.0f, 0.0f, 0.0f, 1.0f,   // Vértice retângulo
@@ -176,42 +180,97 @@ int setup()
 		-0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f, // Vértice cores  (R)
 		0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,  // Vértice cores  (G)
 		0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 1.0f,  // Vértice cores  (B)
-	   -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 1.0f   // Vértice cores  (RGB)
+	   -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 1.0f   // Vértice cores  (RGB)	
 	};
 
 	GLuint VBO, VAO;
-	
+
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
-	
-	//Atributo 0 - posição
+
+	// Atributo 0 - posição
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
-	//Atributo 1 - cor
+	// Atributo 1 - cor
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0); 
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	// Desvincula o VAO (é uma boa prática desvincular qualquer buffer ou array para evitar bugs medonhos)
-	glBindVertexArray(0); 
+	// Desvincula o VAO
+	glBindVertexArray(0);
 
 	return VAO;
 }
 
+
 void pickColor(GLdouble xpos, GLdouble ypos) {
 	unsigned char pixel[4];
 	glReadPixels(xpos, ypos, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixel);
-	if(pixel[0] || pixel[1] || pixel[2]) // se a cor for diferente de preto
-		cout << "R: " << (int)pixel[0] << " G: " << (int)pixel[1] << " B: " << (int)pixel[2] << endl;
+	if (pixel[0] || pixel[1] || pixel[2]) // se a cor for diferente de preto
+	{
+		// Incrementa o número de tentativas
+		tentativas += 1;
+		if (retangulosRemovidos < COLUMNS * LINES)
+			cout << "Tentativas: " << tentativas << endl;
+
+		removeColor((int)pixel[0], (int)pixel[1], (int)pixel[2]);
+	}
 }
-/*
-??? initRandomColors()
+void initRandomColors()
 {
-	// sortear e armazenar as cores em uma colorMatrix[COLUMNS][LINES] de glm::vec3
+	// Função para sortear e armazenar as cores em uma colorMatrix[COLUMNS][LINES] de glm::vec3
+	for (int c = 0; c < COLUMNS; c++)
+	{
+		for (int l = 0; l < LINES; l++)
+		{
+			// Sorteia valores de cor aleatórios
+			float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+			float g = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+			float b = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+
+			// Armazena a cor na matriz
+			colorMatrix[c][l] = glm::vec3(r, g, b);
+		}
+	}
 }
-*/
+
+void removeColor(int r, int g, int b) {
+	// Tolerância
+	float tolerance = 0.40f;
+
+	// Converte os valores de RGB para a faixa de 0 a 1
+	float red = static_cast<float>(r) / 255.0f;
+	float green = static_cast<float>(g) / 255.0f;
+	float blue = static_cast<float>(b) / 255.0f;
+
+	// Calcula os limites superior e inferior para a tolerância
+	float lowerRed = max(0.0f, red - tolerance);
+	float upperRed = min(1.0f, red + tolerance);
+	float lowerGreen = max(0.0f, green - tolerance);
+	float upperGreen = min(1.0f, green + tolerance);
+	float lowerBlue = max(0.0f, blue - tolerance);
+	float upperBlue = min(1.0f, blue + tolerance);
+
+	// Percorre todos os pixels da matriz de cores
+	for (int c = 0; c < COLUMNS; c++) {
+		for (int l = 0; l < LINES; l++) {
+			// Verifica se a cor do pixel está dentro da tolerância
+			if (colorMatrix[c][l].r >= lowerRed && colorMatrix[c][l].r <= upperRed &&
+				colorMatrix[c][l].g >= lowerGreen && colorMatrix[c][l].g <= upperGreen &&
+				colorMatrix[c][l].b >= lowerBlue && colorMatrix[c][l].b <= upperBlue)
+			{
+				// 
+				colorMatrix[c][l] = glm::vec3(-1.0f, -1.0f, -1.0f);
+				retangulosRemovidos += 1;
+				cout << "Retangulos removidos: " << retangulosRemovidos << endl;
+				if (retangulosRemovidos == COLUMNS * LINES)
+					cout << "\nParabens! Voce venceu em " << tentativas << " tentativas!" << endl;
+			}
+		}
+	}
+}
