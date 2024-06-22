@@ -1,5 +1,6 @@
 #version 400
 
+// variavel de entrada
 layout (location = 0) in vec3 vp;
 
 uniform mat4 model;

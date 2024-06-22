@@ -108,12 +108,14 @@ int main()
 				// Define a cor do retângulo
 				shader.setVec3("cor", colorMatrix[c][l].r, colorMatrix[c][l].g, colorMatrix[c][l].b);
 
+				// inicializa a matriz model
 				model = glm::mat4(1);
 
 				// Posiciona o retângulo
 				model = glm::translate(model, glm::vec3(xInitialPos + c * 0.385, yInitialPos - l * 0.125, 0));
 				model = glm::scale(model, glm::vec3(0.38, 0.38, 1));
 
+				// Envia a matriz model para o shader
 				shader.setMat4("model", glm::value_ptr(model));
 
 				// Desenha o retângulo
@@ -122,6 +124,7 @@ int main()
 
 		shaderPalete.Use();
 
+		// Reinicializa a matriz model
 		model = glm::mat4(1);
 
 		// Posiciona a paleta de cores
@@ -185,6 +188,7 @@ int setup()
 
 	GLuint VBO, VAO;
 
+	// Gera e liga o buffer de vértices
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -199,6 +203,7 @@ int setup()
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
 
+	// Desvincula o VBO
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// Desvincula o VAO
@@ -207,7 +212,7 @@ int setup()
 	return VAO;
 }
 
-
+// Função para pegar a cor do pixel clicado
 void pickColor(GLdouble xpos, GLdouble ypos) {
 	unsigned char pixel[4];
 	glReadPixels(xpos, ypos, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixel);
@@ -218,30 +223,32 @@ void pickColor(GLdouble xpos, GLdouble ypos) {
 		if (retangulosRemovidos < COLUMNS * LINES)
 			cout << "Tentativas: " << tentativas << endl;
 
+		// Chama a função para remover a cor
 		removeColor((int)pixel[0], (int)pixel[1], (int)pixel[2]);
 	}
 }
+
+// Função para inicializar as cores dos retângulos
 void initRandomColors()
 {
 	// Função para sortear e armazenar as cores em uma colorMatrix[COLUMNS][LINES] de glm::vec3
 	for (int c = 0; c < COLUMNS; c++)
-	{
 		for (int l = 0; l < LINES; l++)
 		{
-			// Sorteia valores de cor aleatórios
+			// Sorteia valores de cor aleatórios para RGB
 			float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 			float g = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 			float b = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 
-			// Armazena a cor na matriz
+			// Armazena as cores na matriz
 			colorMatrix[c][l] = glm::vec3(r, g, b);
 		}
-	}
 }
 
+// Função para remover a cor clicada
 void removeColor(int r, int g, int b) {
-	// Tolerância
-	float tolerance = 0.40f;
+	// Tolerância, alterar para mudar a dificuldade (quanto menor, mais difícil)
+	float tolerance = 0.45f;
 
 	// Converte os valores de RGB para a faixa de 0 a 1
 	float red = static_cast<float>(r) / 255.0f;
@@ -257,20 +264,22 @@ void removeColor(int r, int g, int b) {
 	float upperBlue = min(1.0f, blue + tolerance);
 
 	// Percorre todos os pixels da matriz de cores
-	for (int c = 0; c < COLUMNS; c++) {
-		for (int l = 0; l < LINES; l++) {
+	for (int c = 0; c < COLUMNS; c++)
+		for (int l = 0; l < LINES; l++)
+		{
 			// Verifica se a cor do pixel está dentro da tolerância
 			if (colorMatrix[c][l].r >= lowerRed && colorMatrix[c][l].r <= upperRed &&
 				colorMatrix[c][l].g >= lowerGreen && colorMatrix[c][l].g <= upperGreen &&
 				colorMatrix[c][l].b >= lowerBlue && colorMatrix[c][l].b <= upperBlue)
 			{
-				// 
+				// Troca a cor do pixel para preto (com negativos para não ter problemas com a tolerância)
 				colorMatrix[c][l] = glm::vec3(-1.0f, -1.0f, -1.0f);
 				retangulosRemovidos += 1;
 				cout << "Retangulos removidos: " << retangulosRemovidos << endl;
+
+				// Fim do jogo
 				if (retangulosRemovidos == COLUMNS * LINES)
 					cout << "\nParabens! Voce venceu em " << tentativas << " tentativas!" << endl;
 			}
 		}
-	}
 }
