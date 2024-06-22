@@ -20,8 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D2B58B13-1820-4401-A763-AEDAFD3BFD47}</ProjectGuid>
-    <RootNamespace>HelloTriangle</RootNamespace>
+    <RootNamespace>Sprites</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Sprite</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -126,11 +127,11 @@
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Common\include\Shader.h" />
+    <None Include="..\shaders\tex_frag.glsl" />
+    <None Include="..\shaders\tex_vert.glsl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\shaders\tex.fs" />
-    <None Include="..\shaders\tex.vs" />
+    <ClInclude Include="..\..\Common\include\Shader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
