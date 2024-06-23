@@ -23,15 +23,15 @@ const GLuint WIDTH = 800, HEIGHT = 600;
 const int COLUMNS = 5, LINES = 11;
 glm::vec3 colorMatrix[COLUMNS][LINES];
 
+// Variáveis globais
+int tentativas = 0;
+int retangulosRemovidos = 0;
+
 // Protótipos das funções
 int setup();
 void pickColor(GLdouble xpos, GLdouble ypos);
 void initRandomColors();
 void removeColor(int r, int g, int b);
-
-// Variáveis globais
-int tentativas = 0;
-int retangulosRemovidos = 0;
 
 // Função MAIN
 int main()
@@ -60,12 +60,6 @@ int main()
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 		std::cout << "Failed to initialize GLAD" << std::endl;
 
-	// Obtendo as informações de versão
-	const GLubyte* renderer = glGetString(GL_RENDERER);
-	const GLubyte* version = glGetString(GL_VERSION);
-	cout << "Renderer: " << renderer << endl;
-	cout << "OpenGL version supported " << version << endl;
-
 	// Definindo as dimensões da viewport com as mesmas dimensões da janela da aplicação
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
@@ -79,6 +73,7 @@ int main()
 	// Gerando um buffer simples
 	GLuint VAO = setup();
 
+	// inicializa a matriz model
 	glm::mat4 model = glm::mat4(1);
 
 	initRandomColors(); // Inicializa a matriz de cores
@@ -96,6 +91,7 @@ int main()
 
 		glBindVertexArray(VAO); //Conectando ao buffer de geometria
 
+		// shader dos retangulos
 		shader.Use();
 
 		GLfloat xInitialPos = -0.77f,
@@ -107,7 +103,7 @@ int main()
 				// Define a cor do retângulo
 				shader.setVec3("cor", colorMatrix[c][l].r, colorMatrix[c][l].g, colorMatrix[c][l].b);
 
-				// inicializa a matriz model
+				// re-inicializa a matriz model
 				model = glm::mat4(1);
 
 				// Posiciona o retângulo
@@ -121,6 +117,7 @@ int main()
 				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 			}
 
+		// shader da paleta
 		shaderPalete.Use();
 
 		// Reinicializa a matriz model
@@ -130,6 +127,7 @@ int main()
 		model = glm::translate(model, glm::vec3(0.70, -0.70, 0));
 		model = glm::scale(model, glm::vec3(0.5, 0.5, 1));
 
+		// envia a matriz para o shader
 		shaderPalete.setMat4("model", glm::value_ptr(model));
 
 		// Desenha a paleta de cores
