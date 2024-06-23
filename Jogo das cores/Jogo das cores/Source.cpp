@@ -16,6 +16,12 @@ using namespace std;
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
+// Dimensões da janela
+const GLuint WIDTH = 800, HEIGHT = 600;
+
+// Retangulos e matriz de cores
+const int COLUMNS = 5, LINES = 11;
+glm::vec3 colorMatrix[COLUMNS][LINES];
 
 // Protótipos das funções
 int setup();
@@ -26,13 +32,6 @@ void removeColor(int r, int g, int b);
 // Variáveis globais
 int tentativas = 0;
 int retangulosRemovidos = 0;
-
-// Dimensões da janela
-const GLuint WIDTH = 800, HEIGHT = 600;
-
-// Retangulos e matriz de cores
-const int COLUMNS = 5, LINES = 11;
-glm::vec3 colorMatrix[COLUMNS][LINES];
 
 // Função MAIN
 int main()
@@ -279,7 +278,7 @@ void removeColor(int r, int g, int b) {
 
 				// Fim do jogo
 				if (retangulosRemovidos == COLUMNS * LINES)
-					cout << "\nParabens! Voce venceu em " << tentativas << " tentativas!" << endl;
+					cout << "\nParabens! Voce terminou em " << tentativas << " tentativas!" << endl;
 			}
 		}
 }
